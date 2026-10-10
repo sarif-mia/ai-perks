@@ -768,7 +768,7 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
                       }
                       setAgentBusy(true);
                       void api<{ reply: string }>("/api/assistant", "POST", {
-                        prompt: `Draft a reply to this conversation: ${messages.map((m) => m.data.text).join("\n")}`,
+                        conversationId: c.id,
                       })
                         .then((r) => setReply(r.reply))
                         .catch((e) => notify(e.message))

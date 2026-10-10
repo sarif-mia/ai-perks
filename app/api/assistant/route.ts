@@ -7,12 +7,21 @@ import {
   HttpError,
   json,
   listRecords,
+  getRecord,
   route,
 } from "@/lib/server";
+import { replyContext } from "@/lib/reply-context";
 import { generateReply } from "@/lib/ai";
 export const POST = route(async (req) => {
-  const { prompt } = z
-    .object({ prompt: z.string().trim().min(1).max(4000) })
+  const { prompt, conversationId } = z
+    .object({
+      prompt: z.string().trim().min(1).max(4000).optional(),
+      conversationId: z.string().uuid().optional(),
+    })
+    .refine(
+      (d) => d.prompt || d.conversationId,
+      "Provide a prompt or conversation",
+    )
     .parse(await body(req));
   const { workspace } = await context();
   const recent = await database()
@@ -36,7 +45,18 @@ export const POST = route(async (req) => {
       new Date().toISOString(),
     )
     .run();
-  const knowledge = (await listRecords(workspace.id))
+  const records = await listRecords(workspace.id);
+  let conversationContext = null;
+  if (conversationId) {
+    await getRecord(workspace.id, "conversations", conversationId);
+    conversationContext = replyContext(records, conversationId);
+    if (!conversationContext)
+      throw new HttpError(
+        422,
+        "This conversation has no incoming text to reply to.",
+      );
+  }
+  const knowledge = records
     .filter(
       (r) =>
         (r.kind === "knowledge" || r.kind === "products") &&
@@ -44,7 +64,11 @@ export const POST = route(async (req) => {
     )
     .map((r) => JSON.stringify(r.data))
     .join("\n");
-  const reply = await generateReply(prompt, knowledge);
+  const reply = await generateReply(
+    conversationContext?.prompt || prompt!,
+    knowledge,
+    conversationContext?.history || [],
+  );
   return json({
     reply,
     source: config().GEMINI_API_KEY ? "Gemini" : "Anthropic",
