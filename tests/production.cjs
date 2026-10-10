@@ -125,12 +125,44 @@ async function hiddenInput() {
     headers,
     data: {
       name: "Temporary verifier",
+      companyName: "Temporary approval verifier",
       email: ownerEmail,
       password: ownerPassword,
       role: "superadmin",
     },
   });
   assert.equal(signup.status(), 201);
+  assert.equal((await owner.request.get(url + "/api/admin")).status(), 401);
+  assert.equal(
+    (
+      await owner.request.post(url + "/api/auth/login", {
+        headers,
+        data: { email: ownerEmail, password: ownerPassword },
+      })
+    ).status(),
+    403,
+  );
+  const platform = await (await req.get(url + "/api/admin")).json();
+  const pendingCompany = platform.companies.find((c) => c.email === ownerEmail);
+  assert.equal(pendingCompany.approvalStatus, "pending");
+  assert.equal(
+    (
+      await req.patch(url + "/api/admin/companies", {
+        headers,
+        data: { id: pendingCompany.id, approvalStatus: "approved" },
+      })
+    ).status(),
+    200,
+  );
+  assert.equal(
+    (
+      await owner.request.post(url + "/api/auth/login", {
+        headers,
+        data: { email: ownerEmail, password: ownerPassword },
+      })
+    ).status(),
+    200,
+  );
   assert.equal((await owner.request.get(url + "/api/admin")).status(), 403);
   const owned = await (await owner.request.get(url + "/api/workspace")).json();
   assert.notEqual(owned.workspace.id, snapshot.workspace.id);
