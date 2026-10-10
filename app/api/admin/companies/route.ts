@@ -1,3 +1,4 @@
+import { approvalEmail } from "@/lib/email";
 import { z } from "zod";
 import { adminContext } from "@/lib/admin";
 import { body, eventStatement, HttpError, json, route } from "@/lib/server";
@@ -110,5 +111,20 @@ export const PATCH = route(async (req) => {
     ),
   );
   await db.batch(statements);
-  return json({ ok: true });
+  let emailStatus = "not_requested";
+  if (data.approvalStatus === "approved") {
+    const owner = await db
+      .prepare(
+        "SELECT users.email,workspaces.name FROM users JOIN workspaces ON users.id=workspaces.owner_id WHERE workspaces.id=?",
+      )
+      .bind(data.id)
+      .first<{ email: string; name: string }>();
+    if (owner) emailStatus = await approvalEmail(owner.email, owner.name);
+    await eventStatement(
+      data.id,
+      "email",
+      "Approval notification: " + emailStatus,
+    ).run();
+  }
+  return json({ ok: true, emailStatus });
 });
