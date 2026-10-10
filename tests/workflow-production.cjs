@@ -146,6 +146,76 @@ async function input() {
         422,
       );
     }
+    await create("automations", {
+      name: marker + " AI draft",
+      trigger: "Customer question",
+      action: "Suggest reply",
+      enabled: true,
+      instructions: "",
+    });
+    await create("automations", {
+      name: marker + " review",
+      trigger: "Customer question",
+      action: "Request review",
+      enabled: true,
+      instructions: "",
+    });
+    await create("knowledge", {
+      name: marker + " reference",
+      type: "FAQ",
+      content:
+        "For this controlled workflow test, Blue Test Item costs 500 BDT and delivery is 60 BDT. Stock is unknown.",
+      status: "Active",
+    });
+    const conversationId = await create("conversations", {
+      name: marker + " conversation",
+      channel: "Website",
+      status: "Waiting",
+      summary: "Controlled workflow verification",
+    });
+    await call(`/api/conversations/${conversationId}/messages`, "POST", {
+      text: "Blue Test Item er delivery shoho total koto?",
+      simulateCustomer: true,
+    });
+    const question = (await call("/api/workspace")).records.find(
+      (r) =>
+        r.kind === "messages" &&
+        r.data.conversationId === conversationId &&
+        r.data.direction === "in",
+    );
+    let questionRuns = [];
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await call("/api/automations/runs", "POST", {});
+      questionRuns = (await call("/api/automations/runs")).runs.filter(
+        (r) => r.sourceId === question.id,
+      );
+      if (
+        questionRuns.length === 2 &&
+        questionRuns.every((r) => r.status === "completed")
+      )
+        break;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    assert.equal(
+      questionRuns.filter((r) => r.status === "completed").length,
+      2,
+    );
+    const automaticDraft = JSON.parse(
+      questionRuns.find((r) => r.action === "Suggest reply").result,
+    );
+    assert.equal(automaticDraft.needsReview, true);
+    assert.match(
+      automaticDraft.reply.replace(/[০-৯]/g, (n) =>
+        String("০১২৩৪৫৬৭৮৯".indexOf(n)),
+      ),
+      /560/,
+    );
+    assert.equal(
+      (await call("/api/workspace")).records.find(
+        (r) => r.id === conversationId,
+      ).data.status,
+      "Human",
+    );
     await call("/api/workspace", "PATCH", {
       ...workspace,
       usageMode: "personal",
@@ -197,7 +267,7 @@ async function input() {
       JSON.stringify({
         status: "PASS",
         checks:
-          "Personal mode; tasks; automatic follow-up; local notification; job claims without duplicates; disabled-master isolation; missing-provider failure; no unsafe external retry; cron auth; connections and run-history views; mobile tasks",
+          "Personal mode; tasks; automatic follow-up; local notification; automatic grounded AI draft; human review routing; job claims without duplicates; disabled-master isolation; missing-provider failure; no unsafe external retry; cron auth; connections and run-history views; mobile tasks",
         externalActionsExecuted: 0,
       }),
     );
@@ -207,11 +277,14 @@ async function input() {
         ...workspace,
         agentEnabled: false,
       }).catch(() => {});
+      const remaining = (await call("/api/workspace")).records;
       for (const record of cleanup.reverse())
         await req
           .delete(url + `/api/records/${record.kind}/${record.id}`, {
             headers,
-            data: { version: 1 },
+            data: {
+              version: remaining.find((r) => r.id === record.id)?.version || 1,
+            },
           })
           .catch(() => {});
       await call("/api/workspace", "PATCH", workspace).catch(() => {});

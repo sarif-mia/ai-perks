@@ -58,3 +58,15 @@ Facebook Messenger currently requires the server-side page configuration documen
 ## Test AI without a Facebook connection
 
 Create a Website conversation in Inbox, choose **Test a customer message**, enter a question, and choose **Add test message**. Choose **AI draft** to generate a reviewed answer using that thread and active knowledge/product records. The test message and saved reply are local records; no external customer receives them. Customer simulation is rejected for Messenger, WhatsApp and Instagram threads and cannot be combined with external sending.
+
+## Personal and business workflows
+
+Settings → Workspace type selects Personal or Business. Both remain isolated workspaces with approval required for new accounts. Tasks are available alongside leads, orders, bookings and follow-ups.
+
+Enable **Automation master switch** in Settings and create an enabled rule. New conversations/questions, new leads/tasks, order transitions, scheduled follow-ups and confirmed bookings enqueue durable jobs. The worker claims each job once and verifies workspace approval, suspension and the current rule state before execution. Local actions generate reviewed AI drafts, create follow-up records, request human review or store notifications. Google actions require a connection. Workflows do not send customer emails/messages automatically. A due date does not schedule timed delivery; follow-ups are planner records.
+
+Workflow runs shows outcomes and draft text. Process pending drains up to three jobs; only local actions can be manually retried. Interrupted jobs are marked failed by recovery so external operations are not blindly repeated. The daily Vercel recovery cron runs within the scheduled 03:00 UTC hour (09:00 Asia/Dhaka) and requires CRON_SECRET. Event-driven work normally starts after the originating request; provider quotas and function limits still apply.
+
+Google OAuth code is prepared for separate Gmail compose, Calendar events, Drive-file-scoped Sheets exports and Tasks permissions. Configure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APP_URL and the 32-byte hex INTEGRATION_ENCRYPTION_KEY, with redirect URI `https://ai-perks-two.vercel.app/api/connections/google/callback`. Enable Gmail, Calendar, Sheets and Tasks APIs in the Google Cloud project. Testing-mode apps require allowed test users; public availability and sensitive scopes may require Google verification. Connections currently remain unavailable until this owner setup is completed.
+
+Tokens are AES-GCM encrypted. OAuth state is hashed, session/workspace bound, expires after ten minutes and is single use; PKCE is used. Google accounts can be disconnected locally, and provider grants can be removed through Google Account permissions. Gmail creates drafts; Calendar creates all-day events with no guests; Sheets creates an app-owned export spreadsheet with RAW cells; Google Tasks uses the default list.
