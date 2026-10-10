@@ -15,12 +15,21 @@ export const POST = route(async (req) => {
   const raw = z
     .object({
       text: z.string().trim().min(1).max(4000),
+      simulateCustomer: z.boolean().default(false),
       sendExternally: z.boolean().default(false),
     })
     .parse(await body(req));
   const id = new URL(req.url).pathname.split("/")[3];
   const { db, workspace } = await context();
   const conversation = await getRecord(workspace.id, "conversations", id);
+  if (
+    raw.simulateCustomer &&
+    (raw.sendExternally || conversation.data.channel !== "Website")
+  )
+    throw new HttpError(
+      422,
+      "Customer simulation is available only for local Website test conversations.",
+    );
   let delivery = "Local";
   if (raw.sendExternally) {
     const c = config();
@@ -72,7 +81,7 @@ export const POST = route(async (req) => {
   const data = validate("messages", {
     conversationId: id,
     text: raw.text,
-    direction: "out",
+    direction: raw.simulateCustomer ? "in" : "out",
     delivery,
   });
   await db.batch([
@@ -80,7 +89,9 @@ export const POST = route(async (req) => {
     eventStatement(
       workspace.id,
       "messages",
-      `Reply ${delivery === "Sent" ? "sent" : "saved"} for ${conversation.title}`,
+      raw.simulateCustomer
+        ? `Local test customer message added for ${conversation.title}`
+        : `Reply ${delivery === "Sent" ? "sent" : "saved"} for ${conversation.title}`,
     ),
   ]);
   return json({ delivery }, 201);

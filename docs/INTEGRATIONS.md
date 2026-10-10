@@ -53,3 +53,8 @@ Self-signup requires a company name and creates a pending company without a sess
 Configure GEMINI_API_KEY in Vercel, optionally GEMINI_MODEL (default gemini-3.1-flash-lite), then redeploy. Gemini free-tier has project quotas and Google free-tier data-use terms; evaluate these before submitting customer data. Drafts remain subject to human review. https://ai.google.dev/gemini-api/docs/pricing
 
 Facebook Messenger currently requires the server-side page configuration documented above. This is a single configured page/workspace integration, not multi-company Facebook OAuth login. Meta app credentials and approved permissions are required before a public company onboarding flow can operate. Approval notices use Resend when RESEND_API_KEY, EMAIL_FROM (verified sender), and APP_URL (HTTPS) are configured. Delivery acceptance/failure is recorded in workspace activity; there is no background retry. Without these values no email is sent; account approval is visible in the admin console and owners can sign in after approval.
+
+
+## Test AI without a Facebook connection
+
+Create a Website conversation in Inbox, choose **Test a customer message**, enter a question, and choose **Add test message**. Choose **AI draft** to generate a reviewed answer using that thread and active knowledge/product records. The test message and saved reply are local records; no external customer receives them. Customer simulation is rejected for Messenger, WhatsApp and Instagram threads and cannot be combined with external sending.

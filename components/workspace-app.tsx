@@ -57,6 +57,7 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
   const [period, setPeriod] = useState(7);
   const [selected, setSelected] = useState("");
   const [reply, setReply] = useState("");
+  const [simulateCustomer, setSimulateCustomer] = useState(false);
   const [sendExternally, setSendExternally] = useState(false);
   const [agentPrompt, setAgentPrompt] = useState("");
   const [agentReply, setAgentReply] = useState("");
@@ -673,6 +674,7 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
                   setSelected(x.id);
                   setReply("");
                   setSendExternally(false);
+                  setSimulateCustomer(false);
                 }}
               >
                 <span className="customer-avatar">{initials(x.title)}</span>
@@ -755,13 +757,30 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
               <div className="chat-compose">
                 <div className="chat-tools">
                   <span>
-                    {sendExternally
-                      ? "Send to Messenger customer"
-                      : "Replies are saved to your workspace"}
+                    {simulateCustomer
+                      ? "Local test customer message"
+                      : sendExternally
+                        ? "Send to Messenger customer"
+                        : "Replies are saved to your workspace"}
                   </span>
+                  {c.data.channel === "Website" && (
+                    <button
+                      className="text-button"
+                      onClick={() => {
+                        setSimulateCustomer(!simulateCustomer);
+                        setReply("");
+                        setSendExternally(false);
+                      }}
+                    >
+                      {simulateCustomer
+                        ? "Cancel customer test"
+                        : "Test a customer message"}
+                    </button>
+                  )}
                   <button
                     className="text-button"
                     onClick={() => {
+                      setSimulateCustomer(false);
                       if (!snapshot?.integrations.ai) {
                         setModal({ type: "integrations" });
                         return;
@@ -822,19 +841,28 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
                       await mutate(
                         `/api/conversations/${c.id}/messages`,
                         "POST",
-                        { text: reply, sendExternally },
-                        sendExternally
-                          ? "Message sent to Messenger."
-                          : "Reply saved. No external message was sent.",
+                        { text: reply, sendExternally, simulateCustomer },
+                        simulateCustomer
+                          ? "Local test customer question added."
+                          : sendExternally
+                            ? "Message sent to Messenger."
+                            : "Reply saved. No external message was sent.",
                       );
                       setReply("");
+                      setSimulateCustomer(false);
                     });
                   }}
                 >
                   <input
                     className="field"
-                    aria-label="Your reply"
-                    placeholder="Write a thoughtful reply…"
+                    aria-label={
+                      simulateCustomer ? "Test customer question" : "Your reply"
+                    }
+                    placeholder={
+                      simulateCustomer
+                        ? "Type a local test customer question…"
+                        : "Write a thoughtful reply…"
+                    }
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     maxLength={4000}
@@ -844,7 +872,9 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
                     className="btn primary"
                     disabled={busy}
                     type="submit"
-                    aria-label="Send reply"
+                    aria-label={
+                      simulateCustomer ? "Add test message" : "Send reply"
+                    }
                   >
                     <Icon name="Send" size={16} />
                   </button>

@@ -76,3 +76,5 @@ This is a functioning standalone SaaS workspace, not complete production feature
 The public homepage is a responsive marketing site with an interactive illustrative product preview, registration/approval explanation, FAQs, privacy and terms pages, SEO metadata, Open Graph image, sitemap and robots configuration. Contact links use sarifmia.ofc@gmail.com. No online subscription checkout is offered.
 
 Browser checks: `node tests/marketing.cjs` (local preview by default; set TEST_URL for production). Live AI verification: `node --env-file=.env.production.local tests/ai-production.mjs` uses temporary controlled records in the approved AIHR BD company, validates conversation context and a reviewed local reply, and removes its records/session afterward. It never sends a Facebook message.
+
+`tests/ai-http-production.cjs` verifies the same AI flow through authenticated public application APIs and browser controls, without requiring direct access to Neon from the test machine. Supply production-test JSON through its hidden stdin prompt. It cleans up temporary conversations/knowledge, resets workspace switching, and signs out the test session.
