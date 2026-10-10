@@ -6,7 +6,7 @@ export async function generateReply(
 ) {
   const c = config();
   if (c.GEMINI_API_KEY) {
-    const model = c.GEMINI_MODEL || "gemini-2.5-flash";
+    const model = c.GEMINI_MODEL || "gemini-3.1-flash-lite";
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
@@ -26,12 +26,10 @@ export async function generateReply(
             ],
           },
           contents: [
-            ...history
-              .slice(-10)
-              .map((m) => ({
-                role: m.role === "assistant" ? "model" : "user",
-                parts: [{ text: m.content }],
-              })),
+            ...history.slice(-10).map((m) => ({
+              role: m.role === "assistant" ? "model" : "user",
+              parts: [{ text: m.content }],
+            })),
             { role: "user", parts: [{ text: prompt }] },
           ],
           generationConfig: { maxOutputTokens: 1000, temperature: 0.2 },

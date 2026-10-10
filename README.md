@@ -56,7 +56,7 @@ Own authentication uses 12+ character passwords, bcrypt hashing, random database
 
 ## Integration status
 
-Optional Anthropic draft generation and manual Messenger delivery are implemented but require valid server credentials and real-account testing. Signed Meta webhook ingress validates raw payload signatures and deduplicates message IDs. No provider credentials are included.
+Gemini free-tier reply drafts and optional Anthropic drafts support tenant-scoped conversation history and business knowledge. Server credentials are required; manual Messenger delivery additionally requires page setup and real-account testing. Signed Meta webhook ingress validates raw payload signatures and deduplicates message IDs. No provider credentials are included.
 
 Broadcasts, follow-ups, posts and automations currently store plans/configuration; background sending is not enabled. Website Chat is a design preview. WhatsApp/Instagram delivery, public visitor sessions, voice, courier booking, payment processing/credit wallets, background push and shared-team invitation/authorization are not implemented. UI notices identify these limits. See `docs/INTEGRATIONS.md`.
 
@@ -71,3 +71,8 @@ This is a functioning standalone SaaS workspace, not complete production feature
 - `scripts/`: migrations, secure administrator bootstrap and deployment helpers
 - `vercel.json`, `netlify.toml`: standalone hosting configuration
 - `.openai/hosting.json`, `build/`: retained private Sites hosting profile
+
+
+The public homepage is a responsive marketing site with an interactive illustrative product preview, registration/approval explanation, FAQs, privacy and terms pages, SEO metadata, Open Graph image, sitemap and robots configuration. Contact links use sarifmia.ofc@gmail.com. No online subscription checkout is offered.
+
+Browser checks: `node tests/marketing.cjs` (local preview by default; set TEST_URL for production). Live AI verification: `node --env-file=.env.production.local tests/ai-production.mjs` uses temporary controlled records in the approved AIHR BD company, validates conversation context and a reviewed local reply, and removes its records/session afterward. It never sends a Facebook message.
