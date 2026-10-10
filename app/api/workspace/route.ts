@@ -26,7 +26,7 @@ export const GET = route(async () => {
     events: results,
     user: { name: user.displayName, email: user.email, role: user.role },
     integrations: {
-      ai: !!(c.ANTHROPIC_API_KEY && c.ANTHROPIC_MODEL),
+      ai: !!(c.GEMINI_API_KEY || (c.ANTHROPIC_API_KEY && c.ANTHROPIC_MODEL)),
       messenger: !!(
         c.META_PAGE_ACCESS_TOKEN &&
         c.META_APP_SECRET &&

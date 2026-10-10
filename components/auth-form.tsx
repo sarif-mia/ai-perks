@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Icon } from "./ui";
 export default function AuthForm({ signup = false }: { signup?: boolean }) {
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   return (
     <main className="auth-page">
@@ -59,10 +60,16 @@ export default function AuthForm({ signup = false }: { signup?: boolean }) {
           </h2>
           <p>
             {signup
-              ? "Create your account and make the workspace yours."
+              ? "Register your company. Access starts after administrator approval."
               : "Sign in to your business workspace."}
           </p>
+          {success && (
+            <p role="status" className="auth-note">
+              {success} <a href="/login">Go to sign in</a>
+            </p>
+          )}
           <form
+            hidden={!!success}
             onSubmit={async (e) => {
               e.preventDefault();
               setBusy(true);
@@ -80,9 +87,15 @@ export default function AuthForm({ signup = false }: { signup?: boolean }) {
                 const body = (await res.json()) as {
                   error?: string;
                   role?: string;
+                  message?: string;
                 };
                 if (!res.ok)
                   throw new Error(body.error || "Unable to sign in.");
+                if (signup) {
+                  setSuccess(body.message || "Awaiting approval.");
+                  setBusy(false);
+                  return;
+                }
                 location.href =
                   body.role === "superadmin" ? "/admin" : "/dashboard";
               } catch (e) {
@@ -93,6 +106,19 @@ export default function AuthForm({ signup = false }: { signup?: boolean }) {
               }
             }}
           >
+            {signup && (
+              <label>
+                Company name
+                <input
+                  className="field"
+                  name="companyName"
+                  required
+                  minLength={2}
+                  maxLength={200}
+                  autoComplete="organization"
+                />
+              </label>
+            )}
             {signup && (
               <label>
                 Your name

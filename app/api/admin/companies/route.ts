@@ -51,29 +51,64 @@ export const POST = route(async (req) => {
   return json({ id: workspaceId }, 201);
 });
 export const PATCH = route(async (req) => {
-  const { id, suspended } = z
-    .object({ id: z.string().uuid(), suspended: z.boolean() })
+  const data = z
+    .object({
+      id: z.string().uuid(),
+      suspended: z.boolean().optional(),
+      approvalStatus: z.enum(["approved", "rejected"]).optional(),
+      password: passwordSchema.optional(),
+    })
+    .refine(
+      (d) => d.suspended !== undefined || !!d.approvalStatus || !!d.password,
+      "Choose an action",
+    )
     .parse(await body(req));
   const { db, user } = await adminContext();
   const w = await db
     .prepare("SELECT id,owner_id FROM workspaces WHERE id=?")
-    .bind(id)
+    .bind(data.id)
     .first<{ id: string; owner_id: string }>();
   if (!w) throw new HttpError(404, "Company not found.");
   if (w.owner_id === user.userId)
     throw new HttpError(
       422,
-      "You cannot suspend your own administration workspace.",
+      "Use profile settings for your administrator account.",
     );
-  await db.batch([
-    db
-      .prepare("UPDATE workspaces SET suspended=? WHERE id=?")
-      .bind(Number(suspended), id),
+  const statements = [];
+  if (data.suspended !== undefined)
+    statements.push(
+      db
+        .prepare("UPDATE workspaces SET suspended=? WHERE id=?")
+        .bind(Number(data.suspended), data.id),
+    );
+  if (data.approvalStatus)
+    statements.push(
+      db
+        .prepare("UPDATE workspaces SET approval_status=? WHERE id=?")
+        .bind(data.approvalStatus, data.id),
+    );
+  if (data.password)
+    statements.push(
+      db
+        .prepare("UPDATE users SET password_hash=? WHERE id=?")
+        .bind(await hashPassword(data.password), w.owner_id),
+    );
+  statements.push(
+    db.prepare("DELETE FROM sessions WHERE user_id=?").bind(w.owner_id),
+  );
+  statements.push(
     eventStatement(
-      id,
+      data.id,
       "admin",
-      suspended ? "Company suspended" : "Company reactivated",
+      data.password
+        ? "Owner password reset"
+        : data.approvalStatus
+          ? "Company " + data.approvalStatus
+          : data.suspended
+            ? "Company suspended"
+            : "Company reactivated",
     ),
-  ]);
+  );
+  await db.batch(statements);
   return json({ ok: true });
 });

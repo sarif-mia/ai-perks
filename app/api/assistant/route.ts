@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   body,
+  config,
   context,
   database,
   HttpError,
@@ -44,5 +45,9 @@ export const POST = route(async (req) => {
     .map((r) => JSON.stringify(r.data))
     .join("\n");
   const reply = await generateReply(prompt, knowledge);
-  return json({ reply, source: "Anthropic", needsReview: true });
+  return json({
+    reply,
+    source: config().GEMINI_API_KEY ? "Gemini" : "Anthropic",
+    needsReview: true,
+  });
 });

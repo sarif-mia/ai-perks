@@ -7,6 +7,7 @@ type Company = {
   ownerName: string;
   email: string;
   suspended: number;
+  approvalStatus: string;
   sampleImported: number;
   records: number;
   createdAt: string;
@@ -24,6 +25,7 @@ type Data = {
   user: { name: string; email: string };
 };
 export default function AdminApp() {
+  const [resetCompany, setResetCompany] = useState<Company | null>(null);
   const [data, setData] = useState<Data | null>(null),
     [error, setError] = useState(""),
     [tab, setTab] = useState("companies"),
@@ -158,7 +160,9 @@ export default function AdminApp() {
               ["Companies", data?.companies.length || 0, "Building2"],
               [
                 "Active workspaces",
-                data?.companies.filter((c) => !c.suspended).length || 0,
+                data?.companies.filter(
+                  (c) => !c.suspended && c.approvalStatus === "approved",
+                ).length || 0,
                 "Check",
               ],
               ["User accounts", data?.users.length || 0, "UsersRound"],
@@ -246,11 +250,59 @@ export default function AdminApp() {
                             <td>{c.records}</td>
                             <td>
                               <Badge>
-                                {c.suspended ? "Suspended" : "Active"}
+                                {c.suspended
+                                  ? "Suspended"
+                                  : c.approvalStatus === "approved"
+                                    ? "Active"
+                                    : c.approvalStatus}
                               </Badge>
                             </td>
                             <td>
                               <div className="admin-actions">
+                                <Button
+                                  disabled={busy}
+                                  onClick={() => {
+                                    setFormError("");
+                                    setResetCompany(c);
+                                  }}
+                                >
+                                  Reset password
+                                </Button>
+                                {c.approvalStatus !== "approved" && (
+                                  <Button
+                                    disabled={busy}
+                                    onClick={() =>
+                                      void action(
+                                        "/api/admin/companies",
+                                        "PATCH",
+                                        {
+                                          id: c.id,
+                                          approvalStatus: "approved",
+                                        },
+                                      ).catch((e) => setError(e.message))
+                                    }
+                                  >
+                                    Approve company
+                                  </Button>
+                                )}
+                                {c.approvalStatus === "pending" && (
+                                  <Button
+                                    disabled={busy}
+                                    onClick={() =>
+                                      void action(
+                                        "/api/admin/companies",
+                                        "PATCH",
+                                        {
+                                          id: c.id,
+                                          approvalStatus: "rejected",
+                                        },
+                                      ).catch((e) => setError(e.message))
+                                    }
+                                  >
+                                    Reject
+                                  </Button>
+                                )}
+
                                 <Button
                                   icon="ArrowUpRight"
                                   disabled={busy}
@@ -325,6 +377,46 @@ export default function AdminApp() {
           </div>
         </main>
       </div>
+      {resetCompany && (
+        <Modal
+          title={`Reset password: ${resetCompany.name}`}
+          onClose={() => setResetCompany(null)}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const password = new FormData(e.currentTarget).get("password");
+              void action("/api/admin/companies", "PATCH", {
+                id: resetCompany.id,
+                password,
+              })
+                .then(() => setResetCompany(null))
+                .catch((e) => setFormError(e.message));
+            }}
+          >
+            <label>
+              New owner password
+              <input
+                className="field"
+                name="password"
+                type="password"
+                required
+                minLength={12}
+                maxLength={72}
+                autoComplete="new-password"
+              />
+            </label>
+            <p>
+              This signs the owner out on every device. Share the password
+              privately.
+            </p>
+            {formError && <p role="alert">{formError}</p>}
+            <Button primary disabled={busy}>
+              Reset password
+            </Button>
+          </form>
+        </Modal>
+      )}
       {open && (
         <Modal
           title="Give a new business a good beginning."

@@ -44,3 +44,12 @@ The super-admin role is assigned only by the trusted bootstrap script. Browser s
 ## Database and scale
 
 D1 migrations are owned by Drizzle. Never modify an applied migration; append a new one. Dashboard snapshots currently load up to 4,000 records and 100 recent events; collection exports load up to 2,000 records. Add cursor pagination, aggregate reporting queries and retention policies before exceeding these bounds. Seed loading is intended for a single owner configuring an empty workspace, not concurrent imports.
+
+
+## Company approval and free-tier AI
+
+Self-signup requires a company name and creates a pending company without a session. Super Admin → Companies → Approve company enables login. Reject or Suspend blocks login and revokes sessions. Create company provisions an approved owner using the supplied email/password. Reset password revokes all owner sessions; passwords are never returned by the API.
+
+Configure GEMINI_API_KEY in Vercel, optionally GEMINI_MODEL (default gemini-2.5-flash), then redeploy. Gemini free-tier has project quotas and Google free-tier data-use terms; evaluate these before submitting customer data. Drafts remain subject to human review. https://ai.google.dev/gemini-api/docs/pricing
+
+Facebook Messenger currently requires the server-side page configuration documented above. This is a single configured page/workspace integration, not multi-company Facebook OAuth login. Meta app credentials and approved permissions are required before a public company onboarding flow can operate. Email delivery is not enabled without a provider and verified sender; account approval is visible in the admin console and owners can sign in after approval.

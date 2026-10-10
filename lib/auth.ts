@@ -53,6 +53,16 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     )
     .bind(await tokenHash(token), Date.now())
     .first<{ id: string; email: string; name: string; role: string }>();
+  if (row && row.role !== "superadmin") {
+    const access = await runtime()
+      .DB!.prepare(
+        "SELECT approval_status,suspended FROM workspaces WHERE owner_id=?",
+      )
+      .bind(row.id)
+      .first<{ approval_status: string; suspended: number }>();
+    if (!access || access.approval_status !== "approved" || access.suspended)
+      return null;
+  }
   return row
     ? {
         userId: row.id,

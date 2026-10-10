@@ -1690,7 +1690,7 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
           </p>
           <div className="settings-row">
             <div>
-              <strong>Anthropic AI</strong>
+              <strong>AI reply assistant</strong>
               <p>Usage and billing are managed in your provider account.</p>
             </div>
             <Badge>
@@ -1899,8 +1899,9 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
             </Badge>
           </h3>
           <p>
-            Set <code>ANTHROPIC_API_KEY</code> and <code>ANTHROPIC_MODEL</code>{" "}
-            to enable reviewed drafts using your knowledge base.
+            Set <code>GEMINI_API_KEY</code> for Gemini free-tier, or{" "}
+            <code>ANTHROPIC_API_KEY</code> and <code>ANTHROPIC_MODEL</code> to
+            enable reviewed drafts using your knowledge base.
           </p>
         </div>
         <div className="integration-detail">

@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { passwordSchema } from "@/lib/auth-validation";
 import { body, database, HttpError, json, route } from "@/lib/server";
-import { createSession, hashPassword, rateLimit } from "@/lib/auth-server";
+import { hashPassword, rateLimit } from "@/lib/auth-server";
 const schema = z.object({
+  companyName: z.string().trim().min(2).max(200),
   name: z.string().trim().min(2).max(100),
   email: z
     .string()
@@ -26,26 +27,40 @@ export const POST = route(async (req) => {
       "An account with this email already exists. Please sign in.",
     );
   const id = crypto.randomUUID();
-  try {
-    await db
+  const now = new Date().toISOString();
+  await db.batch([
+    db
       .prepare(
-        "INSERT INTO users (id,email,name,password_hash,created_at) VALUES (?,?,?,?,?)",
+        "INSERT INTO users (id,email,name,password_hash,role,created_at) VALUES (?,?,?,?,?,?)",
       )
       .bind(
         id,
         data.email,
         data.name,
         await hashPassword(data.password),
-        new Date().toISOString(),
+        "member",
+        now,
+      ),
+    db
+      .prepare(
+        "INSERT INTO workspaces (id,owner_id,name,owner_name,approval_status,created_at) VALUES (?,?,?,?,?,?)",
       )
-      .run();
-  } catch {
-    throw new HttpError(
-      409,
-      "This account could not be created. Try signing in.",
-    );
-  }
-  const res = json({ ok: true }, 201);
-  res.headers.set("Set-Cookie", await createSession(id, req));
-  return res;
+      .bind(
+        crypto.randomUUID(),
+        id,
+        data.companyName,
+        data.name,
+        "pending",
+        now,
+      ),
+  ]);
+  return json(
+    {
+      ok: true,
+      status: "pending",
+      message:
+        "Your company registration is awaiting administrator approval. Sign in after approval.",
+    },
+    201,
+  );
 });

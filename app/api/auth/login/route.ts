@@ -28,6 +28,24 @@ export const POST = route(async (req) => {
     : (await hashPassword(data.password), false);
   if (!valid || !user)
     throw new HttpError(401, "Email or password is incorrect.");
+  if (user.role !== "superadmin") {
+    const workspace = await database()
+      .prepare(
+        "SELECT approval_status,suspended FROM workspaces WHERE owner_id=?",
+      )
+      .bind(user.id)
+      .first<{ approval_status: string; suspended: number }>();
+    if (workspace?.approval_status !== "approved")
+      throw new HttpError(
+        403,
+        "Your company is awaiting approval or has been rejected. Contact the administrator.",
+      );
+    if (workspace.suspended)
+      throw new HttpError(
+        403,
+        "This company is suspended. Contact the administrator.",
+      );
+  }
   const res = json({ ok: true, role: user.role });
   res.headers.set("Set-Cookie", await createSession(user.id, req));
   return res;

@@ -10,6 +10,7 @@ export const workspaces = sqliteTable("workspaces", {
     .notNull()
     .default(false),
   darkMode: integer("dark_mode", { mode: "boolean" }).notNull().default(false),
+  approvalStatus: text("approval_status").notNull().default("approved"),
   suspended: integer("suspended", { mode: "boolean" }).notNull().default(false),
   sampleImported: integer("sample_imported", { mode: "boolean" })
     .notNull()

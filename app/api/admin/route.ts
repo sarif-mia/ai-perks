@@ -5,7 +5,7 @@ export const GET = route(async () => {
   const [{ results: companies }, { results: users }] = await Promise.all([
     db
       .prepare(
-        "SELECT workspaces.id,workspaces.name,workspaces.owner_name AS ownerName,workspaces.suspended,workspaces.sample_imported AS sampleImported,workspaces.created_at AS createdAt,users.email,(SELECT COUNT(*) FROM records WHERE workspace_id=workspaces.id) AS records FROM workspaces LEFT JOIN users ON users.id=workspaces.owner_id ORDER BY workspaces.created_at DESC LIMIT 1000",
+        "SELECT workspaces.id,workspaces.name,workspaces.owner_name AS ownerName,workspaces.suspended,workspaces.approval_status AS approvalStatus,workspaces.sample_imported AS sampleImported,workspaces.created_at AS createdAt,users.email,(SELECT COUNT(*) FROM records WHERE workspace_id=workspaces.id) AS records FROM workspaces LEFT JOIN users ON users.id=workspaces.owner_id ORDER BY workspaces.created_at DESC LIMIT 1000",
       )
       .all(),
     db

@@ -22,6 +22,13 @@
       "when": 1791644461313,
       "tag": "0002_robust_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791646427258,
+      "tag": "0003_company_approval",
+      "breakpoints": true
     }
   ]
 }
