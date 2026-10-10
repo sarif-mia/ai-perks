@@ -1,0 +1,7 @@
+[build]
+command = "npm run build:vercel"
+publish = ".next"
+[build.environment]
+NODE_VERSION = "24"
+[[plugins]]
+package = "@netlify/plugin-nextjs"
