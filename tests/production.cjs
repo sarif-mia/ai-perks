@@ -38,6 +38,15 @@ async function hiddenInput() {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("response", async (response) => {
+    if (response.url().endsWith("/api/auth/login"))
+      console.log(
+        JSON.stringify({
+          loginStatus: response.status(),
+          result: await response.json().catch(() => null),
+        }),
+      );
+  });
   const anonymous = await browser.newContext();
   assert.equal((await anonymous.request.get(url + "/login")).status(), 200);
   assert.equal(
@@ -49,7 +58,20 @@ async function hiddenInput() {
   await page.locator('[name="email"]').fill(email);
   await page.locator('[name="password"]').fill(password);
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL("**/admin", { timeout: 60000 });
+  try {
+    await page.waitForURL("**/admin", { timeout: 20000 });
+  } catch (e) {
+    console.log(
+      JSON.stringify({
+        path: new URL(page.url()).pathname,
+        formError: await page
+          .locator('[role="alert"]')
+          .textContent()
+          .catch(() => null),
+      }),
+    );
+    throw e;
+  }
   await page.getByRole("button", { name: "Open workspace" }).first().waitFor();
   const row = page
     .locator("tbody tr")

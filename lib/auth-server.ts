@@ -1,3 +1,4 @@
+import { AUTH_RATE_SQL } from "./auth-rate-query";
 import bcrypt from "bcryptjs";
 import { database, HttpError } from "./server";
 import { cookie, newToken, tokenHash } from "./auth";
@@ -5,7 +6,10 @@ export async function rateLimit(req: Request, scope: string, email: string) {
   const id = await tokenHash(
     scope +
       ":" +
-      (req.headers.get("cf-connecting-ip") || "local") +
+      (req.headers.get("cf-connecting-ip") ||
+        req.headers.get("x-vercel-forwarded-for") ||
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "local") +
       ":" +
       email,
   );
@@ -13,9 +17,7 @@ export async function rateLimit(req: Request, scope: string, email: string) {
   const limit = scope === "signup" ? 10 : 15;
   const reset = now + 15 * 60 * 1000;
   const result = await database()
-    .prepare(
-      "INSERT INTO auth_rates (id,attempts,reset_at) VALUES (?,1,?) ON CONFLICT(id) DO UPDATE SET attempts=CASE WHEN reset_at<? THEN 1 ELSE attempts+1 END, reset_at=CASE WHEN reset_at<? THEN ? ELSE reset_at END RETURNING attempts",
-    )
+    .prepare(AUTH_RATE_SQL)
     .bind(id, reset, now, now, reset)
     .first<{ attempts: number }>();
   if ((result?.attempts || 0) > limit)

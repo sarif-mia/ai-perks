@@ -1,3 +1,5 @@
+import { DatabaseSync } from "node:sqlite";
+import { AUTH_RATE_SQL } from "../lib/auth-rate-query.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { validate, isKind, workspaceSchema } from "../lib/models.ts";
@@ -108,4 +110,16 @@ test("PostgreSQL adapter preserves parameters, JSON lookup and camel-case aliase
     postgresSQL("INSERT OR IGNORE INTO workspaces (id,owner_id) VALUES (?,?)"),
     /ON CONFLICT \(owner_id\) DO NOTHING$/,
   );
+});
+
+test("authentication rate counters increment and reset with qualified UPSERT reads", () => {
+  const db = new DatabaseSync(":memory:");
+  db.exec(
+    "CREATE TABLE auth_rates(id TEXT PRIMARY KEY, attempts INTEGER NOT NULL, reset_at INTEGER NOT NULL)",
+  );
+  const query = db.prepare(AUTH_RATE_SQL);
+  assert.equal(query.get("test", 1000, 0, 0, 1000)?.attempts, 1);
+  assert.equal(query.get("test", 1000, 0, 0, 1000)?.attempts, 2);
+  assert.equal(query.get("test", 2000, 1500, 1500, 2000)?.attempts, 1);
+  db.close();
 });
