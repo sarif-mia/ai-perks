@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { validate, isKind, workspaceSchema } from "../lib/models.ts";
 import { sampleData } from "../lib/sample.ts";
 import { verifySignature } from "../lib/webhook.ts";
+import { passwordSchema } from "../lib/auth-validation.ts";
+import { postgresSQL } from "../lib/sql.ts";
 test("all sample fixtures obey the production schemas", () => {
   for (const item of sampleData)
     assert.doesNotThrow(() => validate(item.kind, item.data));
@@ -86,4 +88,24 @@ test("webhook signatures validate raw bytes and reject body tampering", async ()
   assert.equal(await verifySignature(raw + " ", signature, secret), false);
   assert.equal(await verifySignature(raw, null, secret), false);
   assert.equal(await verifySignature(raw, "sha256=invalid", secret), false);
+});
+
+test("password validation prevents bcrypt UTF-8 truncation", () => {
+  assert.doesNotThrow(() =>
+    passwordSchema.parse("A long unique password 2026!"),
+  );
+  assert.throws(() => passwordSchema.parse("short"));
+  assert.throws(() => passwordSchema.parse("🌿".repeat(20)));
+});
+test("PostgreSQL adapter preserves parameters, JSON lookup and camel-case aliases", () => {
+  assert.equal(
+    postgresSQL(
+      "SELECT json_extract(payload,'$.conversationId') AS conversationId FROM records WHERE workspace_id=? AND id=?",
+    ),
+    "SELECT (payload::jsonb ->> 'conversationId') AS \"conversationId\" FROM records WHERE workspace_id=$1 AND id=$2",
+  );
+  assert.match(
+    postgresSQL("INSERT OR IGNORE INTO workspaces (id,owner_id) VALUES (?,?)"),
+    /ON CONFLICT \(owner_id\) DO NOTHING$/,
+  );
 });

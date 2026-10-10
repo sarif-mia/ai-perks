@@ -87,7 +87,16 @@ export default function AdminApp() {
           </button>
         ))}
         <div className="admin-sidebar-foot">
-          <a href="/dashboard" className="nav-item">
+          <a
+            href="/dashboard"
+            className="nav-item"
+            onClick={(e) => {
+              e.preventDefault();
+              void action("/api/admin/switch", "POST", { id: "" })
+                .then(() => (location.href = "/dashboard"))
+                .catch((e) => setError(e.message));
+            }}
+          >
             <Icon name="LayoutDashboard" />
             My workspace
           </a>
