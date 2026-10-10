@@ -7,6 +7,7 @@ import { passwordSchema } from "@/lib/auth-validation";
 export const POST = route(async (req) => {
   const data = z
     .object({
+      usageMode: z.enum(["personal", "business"]).default("business"),
       name: z.string().trim().min(2).max(200),
       ownerName: z.string().trim().min(2).max(100),
       email: z
@@ -44,9 +45,16 @@ export const POST = route(async (req) => {
       ),
     db
       .prepare(
-        "INSERT INTO workspaces (id,owner_id,name,owner_name,created_at) VALUES (?,?,?,?,?)",
+        "INSERT INTO workspaces (id,owner_id,name,owner_name,usage_mode,created_at) VALUES (?,?,?,?,?,?)",
       )
-      .bind(workspaceId, userId, data.name, data.ownerName, now),
+      .bind(
+        workspaceId,
+        userId,
+        data.name,
+        data.ownerName,
+        data.usageMode,
+        now,
+      ),
     eventStatement(workspaceId, "admin", "Company created by super-admin"),
   ]);
   return json({ id: workspaceId }, 201);

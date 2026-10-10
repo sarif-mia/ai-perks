@@ -3,6 +3,7 @@ import { passwordSchema } from "@/lib/auth-validation";
 import { body, database, HttpError, json, route } from "@/lib/server";
 import { hashPassword, rateLimit } from "@/lib/auth-server";
 const schema = z.object({
+  usageMode: z.enum(["personal", "business"]).default("business"),
   companyName: z.string().trim().min(2).max(200),
   name: z.string().trim().min(2).max(100),
   email: z
@@ -43,7 +44,7 @@ export const POST = route(async (req) => {
       ),
     db
       .prepare(
-        "INSERT INTO workspaces (id,owner_id,name,owner_name,approval_status,created_at) VALUES (?,?,?,?,?,?)",
+        "INSERT INTO workspaces (id,owner_id,name,owner_name,approval_status,usage_mode,created_at) VALUES (?,?,?,?,?,?,?)",
       )
       .bind(
         crypto.randomUUID(),
@@ -51,6 +52,7 @@ export const POST = route(async (req) => {
         data.companyName,
         data.name,
         "pending",
+        data.usageMode,
         now,
       ),
   ]);
@@ -59,7 +61,7 @@ export const POST = route(async (req) => {
       ok: true,
       status: "pending",
       message:
-        "Your company registration is awaiting administrator approval. Sign in after approval.",
+        "Your workspace registration is awaiting administrator approval. Sign in after approval.",
     },
     201,
   );

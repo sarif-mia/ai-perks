@@ -56,7 +56,7 @@ const fs = require("node:fs");
         .getByRole("link", { name: "Request a workspace" })
         .click();
       await page.waitForURL("**/signup");
-      await page.getByRole("textbox", { name: "Company name" }).waitFor();
+      await page.getByRole("textbox", { name: "Workspace name" }).waitFor();
       await page.goto(base);
       if (width === 390)
         await page.screenshot({

@@ -44,7 +44,7 @@ export const PATCH = route(async (req) => {
   await db.batch([
     db
       .prepare(
-        "UPDATE workspaces SET name=?,owner_name=?,currency=?,language=?,agent_enabled=?,dark_mode=? WHERE id=?",
+        "UPDATE workspaces SET name=?,owner_name=?,currency=?,language=?,agent_enabled=?,dark_mode=?,usage_mode=? WHERE id=?",
       )
       .bind(
         data.name,
@@ -53,6 +53,7 @@ export const PATCH = route(async (req) => {
         data.language,
         Number(data.agentEnabled),
         Number(data.darkMode),
+        data.usageMode,
         workspace.id,
       ),
     eventStatement(workspace.id, "settings", "Workspace preferences updated"),

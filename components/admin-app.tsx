@@ -433,6 +433,13 @@ export default function AdminApp() {
             }}
           >
             <div className="form-stack">
+              <label>
+                Workspace type
+                <select className="field" name="usageMode">
+                  <option value="business">Business</option>
+                  <option value="personal">Personal</option>
+                </select>
+              </label>
               {[
                 ["name", "Company name", "text"],
                 ["ownerName", "Owner name", "text"],

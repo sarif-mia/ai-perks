@@ -74,9 +74,11 @@ interface WorkspaceRow {
   dark_mode: number;
   sample_imported: number;
   suspended: number;
+  usage_mode: "personal" | "business";
 }
 export function mapWorkspace(w: WorkspaceRow): Workspace {
   return {
+    usageMode: w.usage_mode,
     id: w.id,
     name: w.name,
     ownerName: w.owner_name,

@@ -108,7 +108,20 @@ export default function AuthForm({ signup = false }: { signup?: boolean }) {
           >
             {signup && (
               <label>
-                Company name
+                How will you use AI Perks?
+                <select
+                  className="field"
+                  name="usageMode"
+                  defaultValue="business"
+                >
+                  <option value="business">Business workspace</option>
+                  <option value="personal">Personal workspace</option>
+                </select>
+              </label>
+            )}
+            {signup && (
+              <label>
+                Workspace name
                 <input
                   className="field"
                   name="companyName"

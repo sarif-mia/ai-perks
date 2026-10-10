@@ -58,7 +58,7 @@ Own authentication uses 12+ character passwords, bcrypt hashing, random database
 
 Gemini free-tier reply drafts and optional Anthropic drafts support tenant-scoped conversation history and business knowledge. Server credentials are required; manual Messenger delivery additionally requires page setup and real-account testing. Signed Meta webhook ingress validates raw payload signatures and deduplicates message IDs. No provider credentials are included.
 
-Broadcasts, follow-ups, posts and automations currently store plans/configuration; background sending is not enabled. Website Chat is a design preview. WhatsApp/Instagram delivery, public visitor sessions, voice, courier booking, payment processing/credit wallets, background push and shared-team invitation/authorization are not implemented. UI notices identify these limits. See `docs/INTEGRATIONS.md`.
+Broadcasts, follow-ups and posts remain planners; background customer sending is not enabled. Enabled workflow rules now execute new matching events, create local follow-ups/notifications, request review and generate reviewed AI drafts. Google OAuth actions are prepared but require owner setup and account consent. Website Chat is a design preview. WhatsApp/Instagram delivery, public visitor sessions, voice, courier booking, payment processing/credit wallets, background push and shared-team invitation/authorization are not implemented. UI notices identify these limits. See `docs/INTEGRATIONS.md`.
 
 This is a functioning standalone SaaS workspace, not complete production feature parity with AiPraktor. Provider-dependent workflows need credentials and production verification before live use.
 
@@ -78,3 +78,6 @@ The public homepage is a responsive marketing site with an interactive illustrat
 Browser checks: `node tests/marketing.cjs` (local preview by default; set TEST_URL for production). Live AI verification: `node --env-file=.env.production.local tests/ai-production.mjs` uses temporary controlled records in the approved AIHR BD company, validates conversation context and a reviewed local reply, and removes its records/session afterward. It never sends a Facebook message.
 
 `tests/ai-http-production.cjs` verifies the same AI flow through authenticated public application APIs and browser controls, without requiring direct access to Neon from the test machine. Supply production-test JSON through its hidden stdin prompt. It cleans up temporary conversations/knowledge, resets workspace switching, and signs out the test session.
+
+
+Personal/business workspace mode, Tasks, Connections and Workflow runs are available. Enable the automation master switch and individual rules to execute new events. The daily protected recovery cron processes pending jobs; failed external operations require inspection rather than automatic retry. Existing saved rules were disabled during migration so execution starts with deliberate opt-in.

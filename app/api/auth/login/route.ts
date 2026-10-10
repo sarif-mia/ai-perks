@@ -38,12 +38,12 @@ export const POST = route(async (req) => {
     if (workspace?.approval_status !== "approved")
       throw new HttpError(
         403,
-        "Your company is awaiting approval or has been rejected. Contact the administrator.",
+        "Your workspace is awaiting approval or has been rejected. Contact the administrator.",
       );
     if (workspace.suspended)
       throw new HttpError(
         403,
-        "This company is suspended. Contact the administrator.",
+        "This workspace is suspended. Contact the administrator.",
       );
   }
   const res = json({ ok: true, role: user.role });

@@ -1,3 +1,6 @@
+import { after } from "next/server";
+import { planAutomations, processRuns } from "@/lib/automations";
+export const maxDuration = 60;
 import { z } from "zod";
 import {
   body,
@@ -84,8 +87,10 @@ export const POST = route(async (req) => {
     direction: raw.simulateCustomer ? "in" : "out",
     delivery,
   });
+  const messageId = crypto.randomUUID();
   await db.batch([
-    insertStatement(workspace.id, "messages", data),
+    insertStatement(workspace.id, "messages", data, messageId),
+    ...(await planAutomations(workspace.id, "messages", messageId, data)),
     eventStatement(
       workspace.id,
       "messages",
@@ -94,5 +99,6 @@ export const POST = route(async (req) => {
         : `Reply ${delivery === "Sent" ? "sent" : "saved"} for ${conversation.title}`,
     ),
   ]);
+  after(() => processRuns(workspace.id).catch(() => 0));
   return json({ delivery }, 201);
 });

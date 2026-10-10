@@ -1,3 +1,6 @@
+import { after } from "next/server";
+import { planAutomations, processRuns } from "@/lib/automations";
+export const maxDuration = 60;
 import {
   body,
   context,
@@ -29,6 +32,8 @@ export const POST = route(async (req) => {
   await db.batch([
     insertStatement(workspace.id, kind, parsed, id),
     eventStatement(workspace.id, kind, `${parsed.name || kind} created`),
+    ...(await planAutomations(workspace.id, kind, id, parsed)),
   ]);
+  after(() => processRuns(workspace.id).catch(() => 0));
   return json({ id }, 201);
 });

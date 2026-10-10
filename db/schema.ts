@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 export const workspaces = sqliteTable("workspaces", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id").notNull().unique(),
@@ -10,6 +16,7 @@ export const workspaces = sqliteTable("workspaces", {
     .notNull()
     .default(false),
   darkMode: integer("dark_mode", { mode: "boolean" }).notNull().default(false),
+  usageMode: text("usage_mode").notNull().default("business"),
   approvalStatus: text("approval_status").notNull().default("approved"),
   suspended: integer("suspended", { mode: "boolean" }).notNull().default(false),
   sampleImported: integer("sample_imported", { mode: "boolean" })
@@ -76,3 +83,61 @@ export const authRates = sqliteTable("auth_rates", {
   attempts: integer("attempts").notNull(),
   resetAt: integer("reset_at").notNull(),
 });
+
+export const integrations = sqliteTable(
+  "integrations",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    accountEmail: text("account_email").notNull(),
+    credentials: text("credentials").notNull(),
+    config: text("config").notNull().default("{}"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("integrations_workspace_provider").on(
+      t.workspaceId,
+      t.provider,
+    ),
+  ],
+);
+export const oauthStates = sqliteTable("oauth_states", {
+  stateHash: text("state_hash").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  verifier: text("verifier").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+});
+export const automationRuns = sqliteTable(
+  "automation_runs",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    automationId: text("automation_id").notNull(),
+    sourceKey: text("source_key").notNull(),
+    sourceId: text("source_id").notNull(),
+    sourceKind: text("source_kind").notNull(),
+    action: text("action").notNull(),
+    instructions: text("instructions").notNull().default(""),
+    status: text("status").notNull().default("pending"),
+    result: text("result").notNull().default(""),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("automation_runs_rule_source").on(t.automationId, t.sourceKey),
+    index("automation_runs_queue").on(t.status, t.createdAt),
+    index("automation_runs_workspace").on(t.workspaceId, t.createdAt),
+  ],
+);

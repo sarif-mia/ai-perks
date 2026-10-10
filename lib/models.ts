@@ -125,6 +125,13 @@ export const schemas = {
     status: z.enum(["Requested", "Confirmed", "Completed", "Cancelled"]),
     notes: optional,
   }),
+  tasks: z.object({
+    name: text,
+    notes: optional,
+    due: z.string().max(100).default(""),
+    status: z.enum(["To do", "In progress", "Done"]),
+    priority: z.enum(["Low", "Normal", "High"]),
+  }),
   automations: z.object({
     name: text,
     trigger: z.enum([
@@ -133,12 +140,20 @@ export const schemas = {
       "Order confirmed",
       "Order shipped",
       "Conversation waiting",
+      "New lead",
+      "New task",
+      "Follow-up scheduled",
+      "Booking confirmed",
     ]),
     action: z.enum([
       "Suggest reply",
       "Notify team",
       "Create follow-up",
       "Request review",
+      "Create Gmail draft",
+      "Add Calendar event",
+      "Add Sheets row",
+      "Add Google task",
     ]),
     enabled: z.boolean(),
     instructions: optional,
@@ -167,6 +182,7 @@ export interface Workspace {
   ownerName: string;
   currency: string;
   language: string;
+  usageMode?: "personal" | "business";
   agentEnabled: boolean;
   darkMode: boolean;
 }
@@ -195,6 +211,7 @@ export function titleFor(kind: Kind, data: Payload) {
 }
 export const workspaceSchema = z.object({
   name: text,
+  usageMode: z.enum(["personal", "business"]).default("business"),
   ownerName: text,
   currency: z.enum(["BDT", "USD"]),
   language: z.enum(["English", "বাংলা", "Auto-detect"]),

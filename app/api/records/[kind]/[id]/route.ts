@@ -1,3 +1,6 @@
+import { after } from "next/server";
+import { planAutomations, processRuns } from "@/lib/automations";
+export const maxDuration = 60;
 import { z } from "zod";
 import {
   body,
@@ -22,7 +25,7 @@ export const PATCH = route(async (req) => {
   const { kind, id } = path(req);
   const data = validate(kind, raw.data);
   const { db, workspace } = await context();
-  await getRecord(workspace.id, kind, id);
+  const previous = await getRecord(workspace.id, kind, id);
   const result = await db
     .prepare(
       "UPDATE records SET title=?,payload=?,version=version+1,updated_at=? WHERE id=? AND workspace_id=? AND kind=? AND version=?",
@@ -39,11 +42,18 @@ export const PATCH = route(async (req) => {
     .run();
   if (!result.meta.changes)
     throw new HttpError(409, "This record changed. Refresh and try again.");
-  await eventStatement(
-    workspace.id,
-    kind,
-    `${data.name || kind} updated`,
-  ).run();
+  await db.batch([
+    eventStatement(workspace.id, kind, `${data.name || kind} updated`),
+    ...(await planAutomations(
+      workspace.id,
+      kind,
+      id,
+      data,
+      raw.version + 1,
+      previous.data,
+    )),
+  ]);
+  after(() => processRuns(workspace.id).catch(() => 0));
   return json({ ok: true });
 });
 export const DELETE = route(async (req) => {

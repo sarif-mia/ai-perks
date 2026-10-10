@@ -12,6 +12,8 @@ import { modules, navigation } from "@/lib/modules";
 import { Badge, Button, Empty, Icon, initials, Modal } from "./ui";
 import RecordForm from "./record-form";
 import PasswordForm from "./password-form";
+import ConnectionsPanel from "./connections-panel";
+import WorkflowRuns from "./workflow-runs";
 const RevenueChart = lazy(() => import("./revenue-chart"));
 const allNav = navigation.flatMap((g) => g.items);
 const stages = ["New", "Contacted", "Qualified", "Follow-up", "Won", "Lost"];
@@ -446,6 +448,7 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
   }
   function table(list: RecordItem[], kind: Kind) {
     const cols: Record<string, string[]> = {
+      tasks: ["due", "priority", "status"],
       orders: ["product", "channel", "amount", "status"],
       followups: ["channel", "due", "priority", "status"],
       broadcasts: ["channel", "audience", "status"],
@@ -1188,6 +1191,30 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
           "A little attention goes a long way.",
           "A clear queue for every customer who needs a person.",
         )}
+        {snapshot?.events.some((e) => e.entityKind === "notification") && (
+          <section className="panel">
+            <div className="panel-head">
+              <h2>Workflow notifications</h2>
+            </div>
+            {snapshot.events
+              .filter((e) => e.entityKind === "notification")
+              .map((e) => (
+                <div className="notification-row" key={e.id}>
+                  <span className="activity-icon">
+                    <Icon name="Zap" size={17} />
+                  </span>
+                  <div>
+                    <h3>{e.action}</h3>
+                    <p>
+                      {new Date(e.createdAt).toLocaleString("en-US", {
+                        timeZone: "Asia/Dhaka",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+          </section>
+        )}
         <div className="notification-stats">
           <article className="panel mini-stat">
             <span>WAITING FOR THE TEAM</span>
@@ -1771,8 +1798,19 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
               }}
             >
               <div className="form-grid">
+                <label>
+                  Workspace type
+                  <select
+                    className="select"
+                    name="usageMode"
+                    defaultValue={w.usageMode || "business"}
+                  >
+                    <option value="business">Business</option>
+                    <option value="personal">Personal</option>
+                  </select>
+                </label>
                 <label className="wide">
-                  Business name
+                  Workspace name
                   <input
                     className="field"
                     name="name"
@@ -1841,8 +1879,8 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
               ["darkMode", "Dark appearance", "A calmer view for evenings."],
               [
                 "agentEnabled",
-                "Agent preference",
-                "Save your desired agent availability. This does not start background automation.",
+                "Automation master switch",
+                "Allow enabled rules to execute new matching events. Google actions need connected services.",
               ],
             ].map(([key, title, description]) => (
               <div className="settings-row" key={key}>
@@ -1960,7 +1998,8 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
         </div>
         <p className="modal-note">
           WhatsApp, Instagram delivery, couriers, billing, public visitor chat
-          and background jobs are not connected. Registered channel records are
+          are not connected. Workflow execution is available; Google account
+          actions require Connections setup. Registered channel records are
           configuration entries.
         </p>
         <Button
@@ -2028,7 +2067,12 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
         <nav className="sidebar-nav">
           {navigation.map((g) => (
             <div key={g.group}>
-              <div className="nav-label">{g.group}</div>
+              <div className="nav-label">
+                {snapshot?.workspace.usageMode === "personal" &&
+                g.group === "GROW YOUR BUSINESS"
+                  ? "ORGANIZE YOUR DAY"
+                  : g.group}
+              </div>
               {g.items.map(([id, label, ic]) => (
                 <a
                   key={id}
@@ -2156,29 +2200,35 @@ export default function WorkspaceApp({ initialPage }: { initialPage: string }) {
             </section>
           ) : snapshot ? (
             <>
-              {page === "overview"
-                ? overview()
-                : page === "inbox"
-                  ? inbox()
-                  : page === "notifications"
-                    ? notifications()
-                    : page === "activity"
-                      ? activity()
-                      : page === "analytics"
-                        ? analytics()
-                        : page === "setup"
-                          ? setup()
-                          : page === "agent-desk"
-                            ? agentDesk()
-                            : page === "website"
-                              ? website()
-                              : page === "billing"
-                                ? billing()
-                                : page === "settings"
-                                  ? settings()
-                                  : modules[page]
-                                    ? collection()
-                                    : overview()}
+              {page === "overview" ? (
+                overview()
+              ) : page === "inbox" ? (
+                inbox()
+              ) : page === "notifications" ? (
+                notifications()
+              ) : page === "activity" ? (
+                activity()
+              ) : page === "analytics" ? (
+                analytics()
+              ) : page === "setup" ? (
+                setup()
+              ) : page === "agent-desk" ? (
+                agentDesk()
+              ) : page === "website" ? (
+                website()
+              ) : page === "connections" ? (
+                <ConnectionsPanel />
+              ) : page === "workflow-runs" ? (
+                <WorkflowRuns />
+              ) : page === "billing" ? (
+                billing()
+              ) : page === "settings" ? (
+                settings()
+              ) : modules[page] ? (
+                collection()
+              ) : (
+                overview()
+              )}
             </>
           ) : null}
         </main>

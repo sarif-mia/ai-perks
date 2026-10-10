@@ -47,6 +47,15 @@ export default function Privacy() {
           </a>{" "}
           before using AI with customer data.
         </p>
+        <h2>Connected Google accounts</h2>
+        <p>
+          If enabled and authorized, a connected Google account can receive
+          draft emails, calendar events, task records or spreadsheet exports
+          created by your workflows. Google service access is authorized
+          separately. Saved access/refresh tokens are encrypted on the server.
+          Disconnecting removes the workspace’s stored connection; Google
+          permissions can also be removed in your Google account.
+        </p>
         <h2>Infrastructure and integrations</h2>
         <p>
           The service is hosted on Vercel and stores application data in Neon
