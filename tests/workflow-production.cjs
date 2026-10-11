@@ -241,6 +241,10 @@ async function input() {
     await page
       .getByRole("heading", { name: "Connections for your everyday work." })
       .waitFor();
+    await page
+      .getByRole("button", { name: "Connect account", exact: true })
+      .first()
+      .waitFor();
     assert.equal(
       await page
         .getByRole("button", { name: "Connect account", exact: true })
